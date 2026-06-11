@@ -1642,6 +1642,40 @@ void GuiMenu::openSystemSettings()
         });
       }
 
+      // Add options for gamescope upscaling (FSR/linear/nearest)
+      if (Utils::Platform::GetEnv("DEVICE_GAMESCOPE_FSR_SUPPORT") == "true"){
+        auto fsr_toggle = std::make_shared<SwitchComponent>(mWindow);
+        fsr_toggle->setState(SystemConf::getInstance()->get("rocknix.fsr.enabled") == "1");
+        s->addWithLabel(_("ENABLE RESOLUTION UPSCALING"), fsr_toggle);
+        fsr_toggle->setOnChangedCallback([fsr_toggle] {
+                SystemConf::getInstance()->set("rocknix.fsr.enabled", fsr_toggle->getState() ? "1" : "0");
+        });
+
+        auto fsr_mode = std::make_shared<OptionListComponent<std::string>>(mWindow, _("UPSCALING MODE"));
+        std::string selectedFsrMode = SystemConf::getInstance()->get("rocknix.fsr.mode");
+        if (selectedFsrMode.empty())
+                selectedFsrMode = "balanced";
+        fsr_mode->addRange({ { _("ULTRA QUALITY"), "ultra_quality" }, { _("QUALITY"), "quality" }, { _("BALANCED"), "balanced" }, { _("PERFORMANCE"), "performance" } }, selectedFsrMode);
+        s->addWithLabel(_("UPSCALING MODE"), fsr_mode);
+        s->addSaveFunc([fsr_mode] { SystemConf::getInstance()->set("rocknix.fsr.mode", fsr_mode->getSelected()); });
+
+        auto fsr_filter = std::make_shared<OptionListComponent<std::string>>(mWindow, _("UPSCALING FILTER"));
+        std::string selectedFsrFilter = SystemConf::getInstance()->get("rocknix.fsr.filter");
+        if (selectedFsrFilter.empty())
+                selectedFsrFilter = "fsr";
+        fsr_filter->addRange({ { _("FSR"), "fsr" }, { _("LINEAR"), "linear" }, { _("NEAREST"), "nearest" } }, selectedFsrFilter);
+        s->addWithLabel(_("UPSCALING FILTER"), fsr_filter);
+        s->addSaveFunc([fsr_filter] { SystemConf::getInstance()->set("rocknix.fsr.filter", fsr_filter->getSelected()); });
+
+        auto fsr_sharpness = std::make_shared<OptionListComponent<std::string>>(mWindow, _("FSR SHARPNESS"));
+        std::string selectedFsrSharpness = SystemConf::getInstance()->get("rocknix.fsr.sharpness");
+        if (selectedFsrSharpness.empty())
+                selectedFsrSharpness = "0";
+        fsr_sharpness->addRange({ { _("NONE"), "0" }, { _("LOW"), "2" }, { _("MEDIUM"), "5" }, { _("HIGH"), "8" }, { _("MAXIMUM"), "10" } }, selectedFsrSharpness);
+        s->addWithLabel(_("FSR SHARPNESS"), fsr_sharpness);
+        s->addSaveFunc([fsr_sharpness] { SystemConf::getInstance()->set("rocknix.fsr.sharpness", fsr_sharpness->getSelected()); });
+      }
+
       // Add option to toggle touchscreen keyboard
       if (Utils::Platform::GetEnv("DEVICE_HAS_TOUCHSCREEN") == "true"){
         auto touchscreen_keyboard_toggle = std::make_shared<SwitchComponent>(mWindow);
@@ -2997,6 +3031,24 @@ void GuiMenu::openSystemOptionsConfiguration(Window* mWindow, std::string config
 		mangohud->addRange({ {("DEFAULT"), "" }, { _("ENABLED"), "1" },{ _("DISABLED") , "0" } }, SystemConf::getInstance()->get(configName + ".rocknix.mangohud.enabled"));
 		guiSystemOptions->addWithLabel(_("MANGOHUD OVERLAY"), mangohud);
 		guiSystemOptions->addSaveFunc([mangohud, configName] { SystemConf::getInstance()->set(configName + ".rocknix.mangohud.enabled", mangohud->getSelected()); });
+	}
+
+	// Per game/core/emu resolution upscaling
+	if (Utils::Platform::GetEnv("DEVICE_GAMESCOPE_FSR_SUPPORT") == "true"){
+		auto fsr = std::make_shared<OptionListComponent<std::string>>(mWindow, _("RESOLUTION UPSCALING"));
+		fsr->addRange({ {("DEFAULT"), "" }, { _("ENABLED"), "1" },{ _("DISABLED") , "0" } }, SystemConf::getInstance()->get(configName + ".rocknix.fsr.enabled"));
+		guiSystemOptions->addWithLabel(_("RESOLUTION UPSCALING"), fsr);
+		guiSystemOptions->addSaveFunc([fsr, configName] { SystemConf::getInstance()->set(configName + ".rocknix.fsr.enabled", fsr->getSelected()); });
+
+		auto fsrMode = std::make_shared<OptionListComponent<std::string>>(mWindow, _("UPSCALING MODE"));
+		fsrMode->addRange({ {("DEFAULT"), "" }, { _("ULTRA QUALITY"), "ultra_quality" }, { _("QUALITY"), "quality" }, { _("BALANCED"), "balanced" }, { _("PERFORMANCE"), "performance" } }, SystemConf::getInstance()->get(configName + ".rocknix.fsr.mode"));
+		guiSystemOptions->addWithLabel(_("UPSCALING MODE"), fsrMode);
+		guiSystemOptions->addSaveFunc([fsrMode, configName] { SystemConf::getInstance()->set(configName + ".rocknix.fsr.mode", fsrMode->getSelected()); });
+
+		auto fsrFilter = std::make_shared<OptionListComponent<std::string>>(mWindow, _("UPSCALING FILTER"));
+		fsrFilter->addRange({ {("DEFAULT"), "" }, { _("FSR"), "fsr" }, { _("LINEAR"), "linear" }, { _("NEAREST"), "nearest" } }, SystemConf::getInstance()->get(configName + ".rocknix.fsr.filter"));
+		guiSystemOptions->addWithLabel(_("UPSCALING FILTER"), fsrFilter);
+		guiSystemOptions->addSaveFunc([fsrFilter, configName] { SystemConf::getInstance()->set(configName + ".rocknix.fsr.filter", fsrFilter->getSelected()); });
 	}
 #endif
 
